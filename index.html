@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEMONT // Industriedemontage &amp; Rückbau</title>
+<meta name="description" content="Industriedemontage, Rückbau, Entkernung und Recycling – kontrolliert, präzise, kompromisslos.">
+<style>
+  /* ============ RESET & BASE ============ */
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+  :root{
+    --black:#0b0b0d;
+    --coal:#141417;
+    --steel:#1e1f24;
+    --steel-2:#2a2c33;
+    --smoke:#9aa0a6;
+    --white:#f2f0ea;
+    --yellow:#ffd400;
+    --orange:#ff5c00;
+    --rust:#b7410e;
+    --hazard: repeating-linear-gradient(-45deg, var(--yellow) 0 22px, #101014 22px 44px);
+    --font-head:'Archivo Black','Arial Black',Impact,sans-serif;
+    --font-cond:'Oswald','Arial Narrow',Arial,sans-serif;
+  }
+
+  @font-face{ font-family:'Archivo Black'; src:local('Archivo Black'), local('Arial Black'); font-display:swap; }
+  @font-face{ font-family:'Oswald'; src:local('Oswald'), local('Arial Narrow'); font-display:swap; }
+
+  html{ scroll-behavior:smooth; }
+  body{
+    background:var(--black);
+    color:var(--white);
+    font-family:var(--font-cond);
+    overflow-x:hidden;
+    cursor:default;
+  }
+  ::selection{ background:var(--yellow); color:#000; }
+
+  /* Grobkörniges Rausch-Overlay über allem */
+  body::after{
+    content:""; position:fixed; inset:0; z-index:9998; pointer-events:none; opacity:.07;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  body.shake{ animation:quake .55s linear; }
+  @keyframes quake{
+    0%,100%{ transform:translate(0,0); }
+    10%{ transform:translate(-14px,8px) rotate(-.6deg); }
+    20%{ transform:translate(12px,-10px) rotate(.5deg); }
+    30%{ transform:translate(-10px,-6px); }
+    40%{ transform:translate(10px,10px) rotate(.4deg); }
+    50%{ transform:translate(-8px,4px); }
+    60%{ transform:translate(8px,-4px) rotate(-.3deg); }
+    70%{ transform:translate(-6px,-6px); }
+    80%{ transform:translate(5px,5px); }
+    90%{ transform:translate(-3px,2px); }
+  }
+
+  /* ============ SCROLL-FORTSCHRITT (Warnband) ============ */
+  #progress{
+    position:fixed; top:0; left:0; height:8px; width:0%; z-index:10000;
+    background:var(--hazard); background-size:62px 8px;
+    box-shadow:0 0 18px rgba(255,212,0,.55);
+    animation:crawl 1.2s linear infinite;
+  }
+  @keyframes crawl{ to{ background-position:62px 0; } }
+
+  /* ============ NAV ============ */
+  nav{
+    position:fixed; top:0; left:0; right:0; z-index:9000;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 4vw;
+    background:linear-gradient(180deg, rgba(11,11,13,.94), rgba(11,11,13,.75) 70%, transparent);
+    backdrop-filter:blur(6px);
+    border-bottom:1px solid rgba(255,212,0,.15);
+  }
+  .logo{
+    font-family:var(--font-head); font-size:clamp(1.1rem,2.2vw,1.5rem);
+    letter-spacing:.06em; color:var(--white); text-decoration:none; display:flex; align-items:center; gap:.6rem;
+  }
+  .logo .box{
+    background:var(--yellow); color:#000; padding:.1em .35em; clip-path:polygon(0 0,100% 0,92% 100%,0 100%);
+  }
+  nav ul{ display:flex; gap:2.2rem; list-style:none; }
+  nav ul a{
+    color:var(--smoke); text-decoration:none; text-transform:uppercase;
+    font-size:.85rem; letter-spacing:.22em; font-weight:600; position:relative; transition:color .2s;
+  }
+  nav ul a::after{
+    content:""; position:absolute; left:0; bottom:-6px; height:3px; width:0; background:var(--yellow); transition:width .25s;
+  }
+  nav ul a:hover{ color:var(--white); }
+  nav ul a:hover::after{ width:100%; }
+  @media (max-width:720px){ nav ul{ display:none; } }
+
+  /* ============ HERO ============ */
+  header{
+    position:relative; min-height:100svh;
+    display:flex; flex-direction:column; justify-content:center;
+    padding:130px 4vw 110px; overflow:hidden;
+    background:
+      radial-gradient(1200px 600px at 75% 20%, rgba(255,92,0,.12), transparent 60%),
+      radial-gradient(900px 500px at 15% 85%, rgba(255,212,0,.07), transparent 60%),
+      var(--black);
+  }
+  /* Blaupausen-Raster */
+  header::before{
+    content:""; position:absolute; inset:0; opacity:.25;
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse at center, #000 30%, transparent 75%);
+  }
+  #sparks{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+
+  .tag{
+    display:inline-flex; align-items:center; gap:.7rem; width:max-content;
+    font-size:.8rem; letter-spacing:.35em; text-transform:uppercase; color:var(--yellow);
+    border:1px solid rgba(255,212,0,.4); padding:.5em 1.1em; margin-bottom:2rem;
+    animation:blink 2.4s steps(1) infinite;
+  }
+  .tag::before{ content:"⚠"; font-size:1rem; }
+  @keyframes blink{ 0%,100%{ border-color:rgba(255,212,0,.4);} 50%{ border-color:rgba(255,212,0,.9); box-shadow:0 0 14px rgba(255,212,0,.25);} }
+
+  h1{
+    font-family:var(--font-head);
+    font-size:clamp(2.7rem, 9vw, 8rem);
+    line-height:.92; text-transform:uppercase; letter-spacing:-.01em;
+    position:relative; z-index:2;
+  }
+  h1 .line{ display:block; overflow:hidden; }
+  h1 .line span{ display:inline-block; transform:translateY(110%); animation:slam .7s cubic-bezier(.2,.9,.25,1.2) forwards; }
+  h1 .line:nth-child(2) span{ animation-delay:.15s; }
+  h1 .line:nth-child(3) span{ animation-delay:.3s; }
+  @keyframes slam{ to{ transform:translateY(0); } }
+
+  .stroke{ color:transparent; -webkit-text-stroke:2px var(--white); }
+  .glitch{ position:relative; color:var(--yellow); }
+  .glitch::before, .glitch::after{
+    content:attr(data-text); position:absolute; inset:0; overflow:hidden;
+  }
+  .glitch::before{ color:var(--orange); clip-path:inset(15% 0 55% 0); animation:gl 2.8s infinite linear alternate; }
+  .glitch::after{ color:#fff; clip-path:inset(65% 0 8% 0); animation:gl2 3.4s infinite linear alternate; }
+  @keyframes gl{ 0%,92%{ transform:none; opacity:0;} 94%{ transform:translate(-8px,3px); opacity:.9;} 97%{ transform:translate(6px,-2px); opacity:.9;} 100%{ transform:none; opacity:0;} }
+  @keyframes gl2{ 0%,90%{ transform:none; opacity:0;} 93%{ transform:translate(9px,-3px); opacity:.9;} 96%{ transform:translate(-7px,2px); opacity:.9;} 100%{ transform:none; opacity:0;} }
+
+  .sub{
+    margin-top:2.2rem; max-width:560px; color:var(--smoke);
+    font-size:clamp(1rem,1.4vw,1.2rem); line-height:1.7; z-index:2;
+    opacity:0; animation:fadeUp .8s .7s forwards;
+  }
+  @keyframes fadeUp{ from{ opacity:0; transform:translateY(24px);} to{ opacity:1; transform:none;} }
+
+  .cta-row{ display:flex; gap:1.2rem; margin-top:2.6rem; z-index:2; flex-wrap:wrap; opacity:0; animation:fadeUp .8s .9s forwards; }
+  .btn{
+    font-family:var(--font-cond); font-weight:700; text-transform:uppercase; letter-spacing:.2em;
+    font-size:.95rem; padding:1.05em 2.2em; text-decoration:none; cursor:pointer; border:none;
+    clip-path:polygon(0 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%);
+    transition:transform .15s, box-shadow .2s, background .2s;
+  }
+  .btn-yellow{ background:var(--yellow); color:#000; }
+  .btn-yellow:hover{ transform:translate(-3px,-3px); box-shadow:6px 6px 0 var(--orange); }
+  .btn-ghost{ background:transparent; color:var(--white); outline:2px solid var(--steel-2); outline-offset:-2px; }
+  .btn-ghost:hover{ outline-color:var(--yellow); color:var(--yellow); transform:translate(-3px,-3px); }
+
+  .scroll-cue{
+    position:absolute; bottom:2.2rem; left:50%; transform:translateX(-50%);
+    color:var(--smoke); font-size:.72rem; letter-spacing:.4em; text-transform:uppercase;
+    display:flex; flex-direction:column; align-items:center; gap:.7rem; z-index:2;
+  }
+  .scroll-cue::after{ content:""; width:2px; height:44px; background:linear-gradient(var(--yellow), transparent); animation:drop 1.6s ease-in-out infinite; }
+  @keyframes drop{ 0%{ transform:scaleY(0); transform-origin:top;} 60%{ transform:scaleY(1); transform-origin:top;} 100%{ transform:scaleY(0); transform-origin:bottom;} }
+
+  /* Riesiger Hintergrund-Schriftzug */
+  .bg-word{
+    position:absolute; bottom:-2vw; right:-1vw; z-index:1;
+    font-family:var(--font-head); font-size:20vw; color:transparent;
+    -webkit-text-stroke:1px rgba(255,255,255,.06);
+    text-transform:uppercase; user-select:none; pointer-events:none; white-space:nowrap;
+  }
+
+  /* ============ LAUFBAND ============ */
+  .ticker{
+    background:var(--yellow); color:#000; overflow:hidden; white-space:nowrap;
+    border-top:4px solid #000; border-bottom:4px solid #000;
+    transform:rotate(-1.2deg) scale(1.02); position:relative; z-index:5;
+  }
+  .ticker-track{
+    display:inline-block; padding:.85em 0;
+    font-family:var(--font-head); font-size:clamp(1rem,2vw,1.5rem); text-transform:uppercase; letter-spacing:.05em;
+    animation:ticker 22s linear infinite;
+  }
+  .ticker:hover .ticker-track{ animation-play-state:paused; }
+  @keyframes ticker{ to{ transform:translateX(-50%); } }
+  .ticker-track em{ font-style:normal; margin:0 .8em; }
+  .ticker-track em::after{ content:"▸"; margin-left:1.6em; }
+
+  /* ============ SECTIONS ============ */
+  section{ padding:8rem 4vw; position:relative; }
+  .kicker{
+    color:var(--yellow); font-size:.8rem; letter-spacing:.4em; text-transform:uppercase; font-weight:700;
+    display:flex; align-items:center; gap:1rem; margin-bottom:1.4rem;
+  }
+  .kicker::before{ content:""; width:48px; height:3px; background:var(--yellow); }
+  h2{
+    font-family:var(--font-head); font-size:clamp(2rem,5vw,4rem);
+    text-transform:uppercase; line-height:1; margin-bottom:3.5rem;
+  }
+  h2 .accent{ color:var(--yellow); }
+
+  .reveal{ opacity:0; transform:translateY(46px); transition:opacity .7s ease, transform .7s cubic-bezier(.2,.7,.3,1); }
+  .reveal.in{ opacity:1; transform:none; }
+
+  /* ============ LEISTUNGEN ============ */
+  .grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:2px; background:var(--steel-2); }
+  @media (max-width:1020px){ .grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:640px){ .grid{ grid-template-columns:1fr; } }
+  .card{
+    background:var(--coal); padding:2.6rem 2.2rem; position:relative; overflow:hidden;
+    transition:background .25s;
+  }
+  .card::before{
+    content:attr(data-num); position:absolute; top:1rem; right:1.4rem;
+    font-family:var(--font-head); font-size:3.4rem; color:rgba(255,255,255,.05); transition:color .25s;
+  }
+  .card::after{
+    content:""; position:absolute; left:0; bottom:0; height:5px; width:0; background:var(--yellow); transition:width .35s;
+  }
+  .card:hover{ background:var(--steel); }
+  .card:hover::before{ color:rgba(255,212,0,.22); }
+  .card:hover::after{ width:100%; }
+  .card .ico{ width:44px; height:44px; margin-bottom:1.3rem; display:block; stroke:var(--yellow); fill:none; stroke-width:2; transition:transform .25s; }
+  .card:hover .ico{ transform:translateY(-4px) rotate(-3deg); }
+  .card h3{
+    font-family:var(--font-head); font-size:1.25rem; text-transform:uppercase; margin-bottom:.9rem; letter-spacing:.03em;
+  }
+  .card p{ color:var(--smoke); line-height:1.7; font-size:.98rem; }
+
+  /* ============ ZAHLEN ============ */
+  .stats{
+    background:var(--steel); border-top:6px solid var(--yellow); border-bottom:6px solid var(--yellow);
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:3rem; padding:5rem 4vw;
+  }
+  .stat{ text-align:center; }
+  .stat b{
+    font-family:var(--font-head); font-size:clamp(2.6rem,6vw,4.6rem); color:var(--yellow); display:block; line-height:1;
+  }
+  .stat b sup{ font-size:.45em; color:var(--orange); }
+  .stat span{ display:block; margin-top:.8rem; color:var(--smoke); text-transform:uppercase; letter-spacing:.25em; font-size:.78rem; }
+
+  /* ============ SIMULATOR ============ */
+  #simulator{ background:radial-gradient(900px 500px at 50% 100%, rgba(255,92,0,.08), transparent 65%), var(--black); }
+  .sim-wrap{
+    max-width:900px; margin:0 auto; border:1px solid var(--steel-2); background:var(--coal);
+    padding:3rem 2rem 2.4rem; position:relative;
+  }
+  .sim-wrap::before{
+    content:"ZONE 4 // SPRENGBEREICH – ZUTRITT VERBOTEN"; position:absolute; top:-15px; left:50%; transform:translateX(-50%);
+    background:var(--yellow); color:#000; font-family:var(--font-head); font-size:.7rem; letter-spacing:.15em;
+    padding:.45em 1.4em; white-space:nowrap; clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 100%,0 100%);
+  }
+  .site{
+    height:340px; display:flex; align-items:flex-end; justify-content:center; gap:6px; position:relative;
+    background:linear-gradient(transparent 96%, var(--steel-2) 96%);
+    overflow:hidden;
+  }
+  .tower{ display:flex; flex-direction:column-reverse; gap:3px; }
+  .blk{
+    width:56px; height:30px; background:linear-gradient(180deg,var(--steel-2),var(--steel));
+    border:1px solid #3a3d46; position:relative; transition:transform .1s;
+  }
+  .blk::after{ content:""; position:absolute; inset:6px 8px; border:1px solid rgba(255,212,0,.14); }
+  .blk.hit{ animation:crack .18s; background:linear-gradient(180deg,#4a3020,#2a1c12); border-color:var(--rust); }
+  @keyframes crack{ 50%{ transform:scale(1.12) rotate(2deg); } }
+  .blk.fall{
+    animation:collapse .9s cubic-bezier(.5,0,.9,.4) forwards;
+  }
+  @keyframes collapse{
+    to{ transform:translateY(420px) rotate(var(--rot,60deg)) translateX(var(--dx,0px)); opacity:0; }
+  }
+  .crane{
+    position:absolute; left:4%; top:8%; width:130px; opacity:.55;
+  }
+  .sim-hud{
+    display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1.4rem; margin-top:2rem;
+  }
+  .sim-status{
+    font-family:var(--font-head); text-transform:uppercase; font-size:.95rem; letter-spacing:.1em; color:var(--smoke);
+  }
+  .sim-status.armed{ color:var(--orange); animation:blink 1s steps(1) infinite; }
+  .sim-status.done{ color:var(--yellow); }
+  #countdown{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    font-family:var(--font-head); font-size:9rem; color:var(--orange);
+    text-shadow:0 0 40px rgba(255,92,0,.7); z-index:5;
+  }
+  #countdown.on{ display:flex; animation:pulse .95s ease-in-out infinite; }
+  @keyframes pulse{ 50%{ transform:scale(1.25); } }
+  .dust{
+    position:absolute; border-radius:50%; background:radial-gradient(circle, rgba(180,170,150,.55), transparent 70%);
+    pointer-events:none; animation:puff 1.4s ease-out forwards;
+  }
+  @keyframes puff{ from{ transform:scale(.3); opacity:.9; } to{ transform:scale(2.6) translateY(-40px); opacity:0; } }
+  .hint{ color:var(--smoke); font-size:.85rem; margin-top:1rem; text-align:center; letter-spacing:.08em; }
+  .hint kbd{
+    background:var(--steel-2); padding:.15em .5em; border-radius:3px; border:1px solid #444; font-family:inherit;
+  }
+
+  /* ============ ABLAUF ============ */
+  .steps{ max-width:860px; margin:0 auto; position:relative; }
+  .steps::before{
+    content:""; position:absolute; left:29px; top:8px; bottom:8px; width:3px;
+    background:repeating-linear-gradient(var(--yellow) 0 14px, transparent 14px 26px);
+  }
+  .step{ display:flex; gap:2.2rem; padding:1.6rem 0; align-items:flex-start; }
+  .step .n{
+    flex:0 0 60px; height:60px; display:grid; place-items:center;
+    background:var(--coal); border:3px solid var(--yellow); color:var(--yellow);
+    font-family:var(--font-head); font-size:1.3rem; z-index:1;
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+  }
+  .step h3{ font-family:var(--font-head); text-transform:uppercase; font-size:1.15rem; margin-bottom:.5rem; }
+  .step p{ color:var(--smoke); line-height:1.7; max-width:620px; }
+
+  /* ============ KONTAKT / FOOTER ============ */
+  #kontakt{
+    background:var(--steel); text-align:center;
+  }
+  #kontakt h2{ margin-bottom:1.4rem; }
+  #kontakt p{ color:var(--smoke); max-width:520px; margin:0 auto 2.6rem; line-height:1.7; }
+  .hazard-bar{ height:26px; background:var(--hazard); background-size:62px 26px; }
+  footer{
+    padding:2.2rem 4vw; display:flex; justify-content:space-between; flex-wrap:wrap; gap:1rem;
+    color:var(--smoke); font-size:.8rem; letter-spacing:.15em; text-transform:uppercase;
+    border-top:1px solid var(--steel-2);
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *, *::before, *::after{ animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav>
+  <a class="logo" href="#"><span class="box">DE</span>MONT<span style="color:var(--yellow)">▮</span></a>
+  <ul>
+    <li><a href="#leistungen">Leistungen</a></li>
+    <li><a href="#simulator">Simulator</a></li>
+    <li><a href="#ablauf">Ablauf</a></li>
+    <li><a href="#kontakt">Kontakt</a></li>
+  </ul>
+</nav>
+
+<!-- ============ HERO ============ -->
+<header>
+  <canvas id="sparks"></canvas>
+  <div class="bg-word">Rückbau</div>
+
+  <span class="tag">Industriedemontage &middot; Rückbau &middot; Seit 1987</span>
+
+  <h1>
+    <span class="line"><span>Wir reissen</span></span>
+    <span class="line"><span class="stroke">nicht nur ab.</span></span>
+    <span class="line"><span class="glitch" data-text="Wir bauen zurück.">Wir bauen zurück.</span></span>
+  </h1>
+
+  <p class="sub">
+    Komplette Industriedemontage, kontrollierter Rückbau und sortenreines Recycling –
+    von der einzelnen Maschine bis zum ganzen Stahlwerk. Präzise geplant. Hart durchgezogen.
+  </p>
+
+  <div class="cta-row">
+    <a class="btn btn-yellow" href="#simulator">Sprengung testen ⟶</a>
+    <a class="btn btn-ghost" href="#leistungen">Leistungen ansehen</a>
+  </div>
+
+  <div class="scroll-cue">Scroll</div>
+</header>
+
+<!-- ============ LAUFBAND ============ -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track" id="tickerTrack">
+    <em>Industriedemontage</em><em>Kontrollierter Rückbau</em><em>Entkernung</em><em>Schadstoffsanierung</em><em>Stahlbau-Demontage</em><em>Recycling &amp; Verwertung</em><em>Flächenrevitalisierung</em>
+  </div>
+</div>
+
+<!-- ============ LEISTUNGEN ============ -->
+<section id="leistungen">
+  <div class="kicker reveal">Was wir plattmachen</div>
+  <h2 class="reveal">Leistungen mit <span class="accent">Wucht</span> &amp; Verstand</h2>
+
+  <div class="grid">
+    <div class="card reveal" data-num="01">
+      <svg class="ico" viewBox="0 0 44 44"><path d="M4 40h36M6 40V22l10 6V22l10 6V14h12v26M32 20h4M32 26h4M32 32h4"/><path d="M8 14V6h6v8"/></svg>
+      <h3>Industriedemontage</h3>
+      <p>Demontage kompletter Produktionsanlagen, Kraftwerke und Maschinenparks – dokumentiert, sortiert und termingerecht. Auch bei laufendem Betrieb nebenan.</p>
+    </div>
+    <div class="card reveal" data-num="02">
+      <svg class="ico" viewBox="0 0 44 44"><circle cx="22" cy="22" r="10"/><path d="M22 4v6M22 34v6M4 22h6M34 22h6M9 9l4.5 4.5M35 9l-4.5 4.5M9 35l4.5-4.5M35 35l-4.5-4.5"/></svg>
+      <h3>Kontrollierter Rückbau</h3>
+      <p>Vom selektiven Rückbau bis zur Sprengung: Wir bringen Bauwerke millimetergenau zu Fall – mit Statik-Knowhow statt Bauchgefühl.</p>
+    </div>
+    <div class="card reveal" data-num="03">
+      <svg class="ico" viewBox="0 0 44 44"><path d="M22 4l16 6v10c0 10-6.5 17-16 20C12.5 37 6 30 6 20V10z"/><path d="M15 22l5 5 9-11"/></svg>
+      <h3>Schadstoffsanierung</h3>
+      <p>Asbest, KMF, PCB, Altöle: zertifizierte Erkundung, Ausbau und Entsorgung nach TRGS 519/521 – bevor auch nur ein Bagger rollt.</p>
+    </div>
+    <div class="card reveal" data-num="04">
+      <svg class="ico" viewBox="0 0 44 44"><circle cx="22" cy="22" r="6"/><path d="M22 2v6M22 36v6M2 22h6M36 22h6M8 8l4 4M36 8l-4 4M8 36l4-4M36 36l-4-4"/></svg>
+      <h3>Entkernung</h3>
+      <p>Komplette Entkernung bis auf den Rohbau. Sortenreine Trennung aller Materialströme direkt auf der Baustelle.</p>
+    </div>
+    <div class="card reveal" data-num="05">
+      <svg class="ico" viewBox="0 0 44 44"><path d="M14 16l8-12 6 9M34 15l6 12h-10M14 39H6l-4-8 5-8M14 39l-4-6M14 39l4-6M30 39h8l4-8-4-6M6 20l8-4-2 8"/></svg>
+      <h3>Recycling &amp; Verwertung</h3>
+      <p>Bis zu 98&nbsp;% Verwertungsquote: Stahl, Buntmetalle und Betonbruch gehen zurück in den Kreislauf – nicht auf die Deponie.</p>
+    </div>
+    <div class="card reveal" data-num="06">
+      <svg class="ico" viewBox="0 0 44 44"><path d="M4 40L40 4v36zM40 40H4"/><path d="M32 40v-6M24 40v-4M16 40v-3"/></svg>
+      <h3>Flächenrevitalisierung</h3>
+      <p>Vom Altstandort zur baureifen Fläche: Tiefenenttrümmerung, Bodenaustausch und Übergabe mit sauberem Gutachten.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ZAHLEN ============ -->
+<div class="stats">
+  <div class="stat reveal"><b><span class="count" data-target="1240">0</span><sup>+</sup></b><span>Projekte abgerissen</span></div>
+  <div class="stat reveal"><b><span class="count" data-target="870">0</span><sup>kt</sup></b><span>Stahl recycelt</span></div>
+  <div class="stat reveal"><b><span class="count" data-target="98">0</span><sup>%</sup></b><span>Verwertungsquote</span></div>
+  <div class="stat reveal"><b><span class="count" data-target="0">0</span><sup>&nbsp;</sup></b><span>Ausreden</span></div>
+</div>
+
+<!-- ============ SIMULATOR ============ -->
+<section id="simulator">
+  <div class="kicker reveal">Interaktiv</div>
+  <h2 class="reveal">Der <span class="accent">Abriss‑Simulator</span></h2>
+
+  <div class="sim-wrap reveal">
+    <div class="site" id="site">
+      <svg class="crane" viewBox="0 0 130 120" fill="none" aria-hidden="true">
+        <path d="M20 118 V30 H24 V118 Z" fill="#3a3d46"/>
+        <path d="M10 30 H120 V34 H10 Z" fill="#3a3d46"/>
+        <path d="M22 30 L10 12 H34 Z" fill="#ffd400"/>
+        <path d="M100 34 V64" stroke="#ffd400" stroke-width="2"/>
+        <rect x="94" y="64" width="12" height="10" fill="#ff5c00"/>
+      </svg>
+      <div id="countdown">3</div>
+      <!-- Türme werden per JS gebaut -->
+    </div>
+
+    <div class="sim-hud">
+      <span class="sim-status" id="simStatus">STATUS: BEREIT ZUM RÜCKBAU</span>
+      <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+        <button class="btn btn-yellow" id="detonate">💥 Sprengung auslösen</button>
+        <button class="btn btn-ghost" id="rebuild">↺ Wieder aufbauen</button>
+      </div>
+    </div>
+    <p class="hint">Tipp: Einzelne Etagen kannst du auch per <kbd>Klick</kbd> mit der Abrissbirne bearbeiten.</p>
+  </div>
+</section>
+
+<!-- ============ ABLAUF ============ -->
+<section id="ablauf">
+  <div class="kicker reveal">So läuft's</div>
+  <h2 class="reveal">Vom Erstkontakt zur <span class="accent">freien Fläche</span></h2>
+
+  <div class="steps">
+    <div class="step reveal">
+      <div class="n">1</div>
+      <div><h3>Begehung &amp; Analyse</h3><p>Wir sichten das Objekt, prüfen Statik, Schadstoffe und Logistik – und sagen dir ehrlich, was geht und was nicht.</p></div>
+    </div>
+    <div class="step reveal">
+      <div class="n">2</div>
+      <div><h3>Rückbaukonzept &amp; Genehmigung</h3><p>Detailliertes Rückbau- und Entsorgungskonzept inklusive aller Genehmigungen und Anzeigen. Papierkram? Machen wir.</p></div>
+    </div>
+    <div class="step reveal">
+      <div class="n">3</div>
+      <div><h3>Demontage &amp; Abbruch</h3><p>Schadstoffe raus, Entkernung, dann fällt das Bauwerk – maschinell oder per Sprengung. Sicher, staubarm, erschütterungsüberwacht.</p></div>
+    </div>
+    <div class="step reveal">
+      <div class="n">4</div>
+      <div><h3>Recycling &amp; Übergabe</h3><p>Materialien werden sortenrein verwertet, die Fläche wird besenrein und dokumentiert übergeben. Bereit für Neues.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ KONTAKT ============ -->
+<section id="kontakt">
+  <div class="kicker reveal" style="justify-content:center;">Projekt anfragen</div>
+  <h2 class="reveal">Muss bei dir was <span class="accent">weg?</span></h2>
+  <p class="reveal">Schick uns Eckdaten zu deinem Objekt – wir melden uns innerhalb von 24&nbsp;Stunden mit einer ersten Einschätzung. Unverbindlich, aber verbindlich im Ton.</p>
+  <a class="btn btn-yellow reveal" href="mailto:anfrage@demont.example" style="display:inline-block;">anfrage@demont.example ⟶</a>
+</section>
+
+<div class="hazard-bar" aria-hidden="true"></div>
+<footer>
+  <span>© 2026 DEMONT Industriedemontage GmbH</span>
+  <span>Impressum · Datenschutz · AGB</span>
+  <span>Härter als Beton. Fairer als der Markt.</span>
+</footer>
+
+<script>
+/* ============ SCROLL-FORTSCHRITT ============ */
+const bar = document.getElementById('progress');
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  bar.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+}, { passive:true });
+
+/* ============ REVEAL ON SCROLL ============ */
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
+}, { threshold:.18 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+/* ============ ZÄHLER ============ */
+const cio = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (!e.isIntersecting) return;
+    cio.unobserve(e.target);
+    const el = e.target, target = +el.dataset.target, dur = 1600, t0 = performance.now();
+    (function tick(t){
+      const p = Math.min((t - t0) / dur, 1);
+      el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString('de-DE');
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  });
+}, { threshold:.6 });
+document.querySelectorAll('.count').forEach(el => cio.observe(el));
+
+/* ============ LAUFBAND VERDOPPELN (nahtlose Schleife) ============ */
+const track = document.getElementById('tickerTrack');
+track.innerHTML += track.innerHTML;
+
+/* ============ FUNKEN-CANVAS IM HERO ============ */
+const cv = document.getElementById('sparks'), cx = cv.getContext('2d');
+let sparks = [];
+function sizeCanvas(){ cv.width = cv.offsetWidth; cv.height = cv.offsetHeight; }
+sizeCanvas(); addEventListener('resize', sizeCanvas);
+
+function spawnSpark(x, y, burst){
+  sparks.push({
+    x: x ?? Math.random() * cv.width,
+    y: y ?? cv.height * (0.35 + Math.random() * 0.5),
+    vx: (Math.random() - .5) * (burst ? 9 : 2.4),
+    vy: -(Math.random() * (burst ? 8 : 3) + 1),
+    life: 1,
+    size: Math.random() * 2.2 + .6,
+    hue: 30 + Math.random() * 25
+  });
+}
+setInterval(() => { if (document.visibilityState === 'visible' && sparks.length < 140) for (let i = 0; i < 3; i++) spawnSpark(); }, 90);
+
+/* Funken folgen der Maus im Hero */
+document.querySelector('header').addEventListener('pointermove', e => {
+  if (Math.random() < .35) spawnSpark(e.clientX, e.clientY + scrollY, false);
+});
+
+(function loop(){
+  cx.clearRect(0, 0, cv.width, cv.height);
+  sparks = sparks.filter(s => s.life > 0);
+  for (const s of sparks) {
+    s.x += s.vx; s.y += s.vy; s.vy += .12; s.life -= .016;
+    cx.globalAlpha = Math.max(s.life, 0);
+    cx.fillStyle = `hsl(${s.hue} 100% ${55 + s.life * 30}%)`;
+    cx.fillRect(s.x, s.y, s.size, s.size * 2.2);
+  }
+  cx.globalAlpha = 1;
+  requestAnimationFrame(loop);
+})();
+
+/* ============ ABRISS-SIMULATOR ============ */
+const site = document.getElementById('site');
+const statusEl = document.getElementById('simStatus');
+const countdownEl = document.getElementById('countdown');
+const TOWERS = [7, 10, 6, 9, 5];
+let demolishing = false;
+
+function buildTowers(){
+  site.querySelectorAll('.tower').forEach(t => t.remove());
+  TOWERS.forEach(h => {
+    const tower = document.createElement('div');
+    tower.className = 'tower';
+    for (let i = 0; i < h; i++) {
+      const b = document.createElement('div');
+      b.className = 'blk';
+      b.addEventListener('click', () => smash(b));
+      tower.appendChild(b);
+    }
+    site.appendChild(tower);
+  });
+  setStatus('STATUS: BEREIT ZUM RÜCKBAU', '');
+}
+
+function setStatus(text, cls){ statusEl.textContent = text; statusEl.className = 'sim-status ' + cls; }
+
+function puffAt(el){
+  const r = el.getBoundingClientRect(), s = site.getBoundingClientRect();
+  const d = document.createElement('div');
+  d.className = 'dust';
+  const size = 40 + Math.random() * 50;
+  d.style.cssText = `width:${size}px;height:${size}px;left:${r.left - s.left + r.width/2 - size/2}px;top:${r.top - s.top}px;`;
+  site.appendChild(d);
+  setTimeout(() => d.remove(), 1400);
+}
+
+function smash(blk){
+  if (blk.classList.contains('fall')) return;
+  const tower = blk.parentElement;
+  const blocks = [...tower.querySelectorAll('.blk:not(.fall)')];
+  const top = blocks[blocks.length - 1]; // oberste Etage zuerst
+  top.classList.add('hit');
+  puffAt(top);
+  setTimeout(() => {
+    top.style.setProperty('--rot', (Math.random() * 160 - 80) + 'deg');
+    top.style.setProperty('--dx', (Math.random() * 120 - 60) + 'px');
+    top.classList.add('fall');
+    checkCleared();
+  }, 160);
+}
+
+function checkCleared(){
+  if (!site.querySelector('.blk:not(.fall)')) {
+    setStatus('STATUS: RÜCKBAU ABGESCHLOSSEN ✔ FLÄCHE BAUREIF', 'done');
+  }
+}
+
+document.getElementById('detonate').addEventListener('click', () => {
+  if (demolishing) return;
+  const standing = [...site.querySelectorAll('.blk:not(.fall)')];
+  if (!standing.length) { setStatus('STATUS: NICHTS MEHR DA. ERST AUFBAUEN. ↺', 'armed'); return; }
+  demolishing = true;
+  setStatus('STATUS: ZÜNDUNG SCHARF – BEREICH RÄUMEN!', 'armed');
+
+  let n = 3;
+  countdownEl.textContent = n;
+  countdownEl.classList.add('on');
+  const iv = setInterval(() => {
+    n--;
+    if (n > 0) { countdownEl.textContent = n; return; }
+    clearInterval(iv);
+    countdownEl.classList.remove('on');
+    document.body.classList.add('shake');
+    setTimeout(() => document.body.classList.remove('shake'), 600);
+
+    // Blockweise von unten wegsprengen – Türme kippen zeitversetzt
+    standing.sort(() => Math.random() - .5).forEach((b, i) => {
+      setTimeout(() => {
+        b.classList.add('hit');
+        puffAt(b);
+        b.style.setProperty('--rot', (Math.random() * 220 - 110) + 'deg');
+        b.style.setProperty('--dx', (Math.random() * 180 - 90) + 'px');
+        b.classList.add('fall');
+        if (i === standing.length - 1) {
+          demolishing = false;
+          checkCleared();
+        }
+      }, i * 28);
+    });
+
+    // Funken-Burst im Hero-Canvas als Bonus, falls sichtbar
+    for (let i = 0; i < 60; i++) spawnSpark(cv.width * Math.random(), cv.height * .8, true);
+  }, 900);
+});
+
+document.getElementById('rebuild').addEventListener('click', () => {
+  if (demolishing) return;
+  buildTowers();
+});
+
+buildTowers();
+</script>
+</body>
+</html>
